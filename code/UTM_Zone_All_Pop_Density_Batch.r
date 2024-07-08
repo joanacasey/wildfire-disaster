@@ -94,10 +94,10 @@ hawaii <- hawaii %>% mutate(disaster_id = sub(";.*", "", disaster_nested_id))
 alaska <- alaska %>% mutate(disaster_id = sub(";.*", "", disaster_nested_id))
 
 # rasters
-# us_raster_00 <- raster("~/casey-cohort/us_pop2000myc.tif")
-# us_raster_10 <- raster("~/casey-cohort/us_pop2010myc.tif")
-us_raster_00 <- raster("/Volumes/casey-cohort/us_pop2000myc.tif")
-us_raster_10 <- raster("/Volumes/casey-cohort/us_pop2010myc.tif")
+us_raster_00 <- raster("~/casey-cohort/us_pop2000myc.tif")
+us_raster_10 <- raster("~/casey-cohort/us_pop2010myc.tif")
+# us_raster_00 <- raster("/Volumes/casey-cohort/us_pop2000myc.tif")
+# us_raster_10 <- raster("/Volumes/casey-cohort/us_pop2010myc.tif")
 
 # crs UTM mapping by place
 utm_crs <- read.csv(here("data", "raw", "utm_popden.csv"))
@@ -176,12 +176,12 @@ output_10 <- data.frame()
 
 
 # 2000-2009 fires ---------------------------------------------------------
-df.in <- fires_utm_10_00[1:2,]
-pop_raster <- us_raster_00
-output_00 <- pop_den_check(test_df, output_00, us_raster_00)
+# df.in <- fires_utm_10_00[1:2,]
+# pop_raster <- us_raster_00
+# output_00 <- pop_den_check(test_df, output_00, us_raster_00)
 
-# output_00 <- pop_den_check(fires_utm_10_00, output_00, us_raster_00)
-# output_10 <- pop_den_check(fires_utm_10_10, output_10, us_raster_10)
+output_00 <- pop_den_check(fires_utm_10_00, output_00, us_raster_00)
+output_10 <- pop_den_check(fires_utm_10_10, output_10, us_raster_10)
 
 # Output 2000-2009 --------------------------------------------------------
 
