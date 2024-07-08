@@ -24,16 +24,25 @@ library(stringr)
 
 load(here(
   "data",
-  "processed",
-  "combined",
-  "binded_conus_disaster_fires_2000_2019.rdata"
+  "raw",
+  "all_disasters_select_vars.rdata"
 ))
+
+# clarify these datasets
+conus <- all_disaster_perimeters_buffers_conus_dist_select_vars
+hawaii <- all_disaster_perimeters_buffers_hawaii_select_vars
+alaska <- all_disaster_perimeters_buffers_alaska_dist_select_vars
+
+# fix the disaster id variable
+conus <- conus %>% mutate(disaster_id = sub(";.*", "", disaster_nested_id))
+hawaii <- hawaii %>% mutate(disaster_id = sub(";.*", "", disaster_nested_id))
+alaska <- alaska %>% mutate(disaster_id = sub(";.*", "", disaster_nested_id))
 
 # rasters
 us_raster_00 <- raster("~/casey-cohort/us_pop2000myc.tif")
 us_raster_10 <- raster("~/casey-cohort/us_pop2010myc.tif")
 
-# crs UTM mapping
+# crs UTM mapping by place
 utm_crs <- read.csv(here("data", "raw", "utm_popden.csv"))
 
 # Turn off spherical geometry ---------------------------------------------
