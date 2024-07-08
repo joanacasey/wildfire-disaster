@@ -6,17 +6,65 @@
 # Goal: Population Density Overlap Batch - UTM Zone 10
 
 # Load packages -----------------------------------------------------------
+library(pacman)
+p_load(raster, tmap, SpatialKDE, dplyr, here, sf, readr, beepr, parallel, stringr)
 
-library(raster)
-library(tmap)
-library(SpatialKDE)
-library(dplyr)
-library(here)
-library(sf)
-library(readr)
-library(beepr)
-library(parallel)
-library(stringr)
+# Load functions ----------------------------------------------------------
+pop_den_check <- function(df.in, df.out, pop_raster, crs = crs_espg) {
+
+    lst <- mclapply(1:nrow(df.in), function(i) {
+    fire_work <- df.in[i,] %>% 
+      st_transform(crs = proj4string(pop_raster))
+    disaster_id_obj <- fire_work$disaster_id
+    
+    # Crop and mask for UTM Zone 10 wildfires 
+    
+    r <- crop(pop_raster, extent(fire_work))
+    r <- mask(r, fire_work)
+    
+    ## Convert Raster to Points 
+    
+    utm_10_points = rasterToPoints(r, fun=function(x){x>=1}, spatial = TRUE)
+    
+    utm_10_sf <- utm_10_points %>% 
+      st_as_sf(coords = c("x", "y"), dim = "XY") 
+    
+    # transform to UTM zone NAD83 meters unit
+    
+    utm_10_sf$geometry <- st_transform(utm_10_sf$geometry, crs = crs)
+    fire_work$shape <- st_transform(fire_work$shape, crs = crs)
+    
+    cell_size <- 300
+    band_width <- 907 # Radius in meters of a mile^2 
+    
+    test <- as.data.frame(utm_10_sf)
+    
+  if(sum(test$us_pop2000myc.population_data) > 0) {
+    
+      grid_utm_10 <- utm_10_sf %>% 
+        st_join(fire_work) %>% 
+        create_grid_rectangular(cell_size = cell_size, side_offset = band_width) 
+      
+      density <- utm_10_sf %>% 
+        kde(band_width = band_width, kernel = "quartic", grid = grid_utm_10, weights = utm_10_sf$us_pop2000myc.population_data)
+      
+      density_criteria <- as.data.frame(density) %>% 
+        filter(kde_value == max(kde_value)) %>% 
+        dplyr::mutate(density_criteria_met = ifelse(kde_value >= 250, "Yes","No"))
+      
+      density_criteria$disaster_id <- fire_work$disaster_id
+    
+      
+  } else{
+      density_criteria <- utm_10_sf %>% mutate(kde_value=0, density_criteria_met = "No", disaster_id = disaster_id_obj)  
+      
+      }
+    }, mc.cores = 4 )
+    
+    df.out <- bind_rows(df.out, lst)
+    
+    #print(i)
+}
 
 # Load data ---------------------------------------------------------------
 
@@ -26,6 +74,13 @@ load(here(
   "data",
   "raw",
   "all_disasters_select_vars.rdata"
+))
+
+load(here(
+  "data",
+  "processed",
+  "combined",
+  "binded_conus_disaster_fires_2000_2019.rdata"
 ))
 
 # clarify these datasets
@@ -39,8 +94,10 @@ hawaii <- hawaii %>% mutate(disaster_id = sub(";.*", "", disaster_nested_id))
 alaska <- alaska %>% mutate(disaster_id = sub(";.*", "", disaster_nested_id))
 
 # rasters
-us_raster_00 <- raster("~/casey-cohort/us_pop2000myc.tif")
-us_raster_10 <- raster("~/casey-cohort/us_pop2010myc.tif")
+# us_raster_00 <- raster("~/casey-cohort/us_pop2000myc.tif")
+# us_raster_10 <- raster("~/casey-cohort/us_pop2010myc.tif")
+us_raster_00 <- raster("/Volumes/casey-cohort/us_pop2000myc.tif")
+us_raster_10 <- raster("/Volumes/casey-cohort/us_pop2010myc.tif")
 
 # crs UTM mapping by place
 utm_crs <- read.csv(here("data", "raw", "utm_popden.csv"))
@@ -64,16 +121,22 @@ fires <- fires %>%
 
 # UTM zone
 # State list
-for(u in utm_crs$utm){print(u)
-utm_crs_10_temp <- utm_crs %>% filter(utm==u) %>% mutate(states_list = str_split(states, ", "))
-states_vector <- unlist(utm_crs_10_temp$states_list[1])
+for(u in utm_crs$utm){
+  
+  print(u)
 
-fires_utm_10 <- fires %>%
-  filter(state %in% states_vector)
-crs_espg <- utm_crs_10_temp$crs
-print(unique(crs_espg))
-print(unique(fires_utm_10$state))
-}
+  utm_crs_10_temp <- utm_crs %>%
+    filter(utm==u) %>%
+    mutate(states_list = str_split(states, ", "))
+  states_vector <- unlist(utm_crs_10_temp$states_list[1])
+
+  fires_utm_10 <- fires %>%
+    filter(state %in% states_vector)
+  
+  crs_espg <- utm_crs_10_temp$crs
+  print(unique(crs_espg))
+  print(unique(fires_utm_10$state))
+
 # Create the buffer for wildfire boundaries -------------------------------
 
 # change crs to us_raster_00
@@ -113,65 +176,12 @@ output_10 <- data.frame()
 
 
 # 2000-2009 fires ---------------------------------------------------------
-pop_den_check <- function(df.in, df.out, pop_raster) {
+df.in <- fires_utm_10_00[1:2,]
+pop_raster <- us_raster_00
+output_00 <- pop_den_check(test_df, output_00, us_raster_00)
 
-  lst <- mclapply(1:nrow(fires_utm_10_00), function(i) {
-  fire_work <- df.in[i,] %>% 
-    st_transform(crs = proj4string(pop_raster))
-  disaster_id_obj <- fire_work$disaster_id
-  
-  # Crop and mask for UTM Zone 10 wildfires 
-  
-  r <- crop(pop_raster, extent(fire_work))
-  r <- mask(r, fire_work)
-  
-  ## Convert Raster to Points 
-  
-  utm_10_points = rasterToPoints(r, fun=function(x){x>=1}, spatial = TRUE)
-  
-  utm_10_sf <- utm_10_points %>% 
-    st_as_sf(coords = c("x", "y"), dim = "XY") 
-  
-  # transform to UTM zone NAD83 meters unit
-  
-  utm_10_sf$geometry <- st_transform(utm_10_sf$geometry, crs = crs_espg)
-  fire_work$shape <- st_transform(fire_work$shape, crs = crs_espg)
-  
-  cell_size <- 300
-  band_width <- 907 # Radius in meters of a mile^2 
-  
-  test <- as.data.frame(utm_10_sf)
-  if(sum(test$us_pop2000myc.population_data) > 0) {
-  
-    grid_utm_10 <- utm_10_sf %>% 
-      st_join(fire_work) %>% 
-      create_grid_rectangular(cell_size = cell_size, side_offset = band_width) 
-    
-    density <- utm_10_sf %>% 
-      kde(band_width = band_width, kernel = "quartic", grid = grid_utm_10, weights = utm_10_sf$us_pop2000myc.population_data)
-    
-    density_criteria <- as.data.frame(density) %>% 
-      filter(kde_value == max(kde_value)) %>% 
-      dplyr::mutate(density_criteria_met = ifelse(kde_value >= 250, "Yes","No"))
-    
-    density_criteria$disaster_id <- fire_work$disaster_id
-  
-    
-  } else{
-    density_criteria <- utm_10_sf %>% mutate(kde_value=0, density_criteria_met = "No", disaster_id = disaster_id_obj)  
-    
-    
-    }
-  }, mc.cores = 4 )
-  
-  df.out <- bind_rows(df.out, lst)
-  
-  #print(i)
-  
-}
-
-output_00 <- pop_den_check(fires_utm_10_00, output_00, us_raster_00)
-output_10 <- pop_den_check(fires_utm_10_10, output_10, us_raster_10)
+# output_00 <- pop_den_check(fires_utm_10_00, output_00, us_raster_00)
+# output_10 <- pop_den_check(fires_utm_10_10, output_10, us_raster_10)
 
 # Output 2000-2009 --------------------------------------------------------
 
@@ -202,4 +212,5 @@ fire_density_criteria_full <- fires_utm_10_00 %>%
 
 # write full fire density criteria .csv file
 fire_density_criteria_full %>%
-  write_csv(here("data", "processed", "combined", "pop_density_test", "utm_zone_10", "fire_density_criteria_full.csv"))
+  write_csv(here("data", "processed", "combined", "pop_density_test", paste0("utm_zone_", utm), "fire_density_criteria_full.csv"))
+}
