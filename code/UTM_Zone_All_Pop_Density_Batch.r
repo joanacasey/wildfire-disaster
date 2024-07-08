@@ -8,6 +8,7 @@
 # Load packages -----------------------------------------------------------
 library(pacman)
 p_load(raster, tmap, SpatialKDE, dplyr, here, sf, readr, beepr, parallel, stringr)
+# test
 
 # Load functions ----------------------------------------------------------
 pop_den_check <- function(df.in, df.out, pop_raster, crs = crs_espg) {
