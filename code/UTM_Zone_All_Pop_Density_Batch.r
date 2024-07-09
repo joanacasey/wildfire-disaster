@@ -2,12 +2,14 @@
 
 # Author: Alex Northrop, Benjamin Steiger
 # Date: 10/31/2022
-# Last Update: 08/25/2023
+# Last Update: 07/19/2024
 # Goal: Population Density Overlap Batch - UTM Zone 10
 
 # Load packages -----------------------------------------------------------
-library(pacman)
-p_load(raster, tmap, SpatialKDE, dplyr, here, sf, readr, beepr, parallel, stringr)
+if (!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
+pacman::p_load(raster, tmap, SpatialKDE, dplyr, here, sf, readr, beepr, 
+               parallel, stringr)
+
 
 # Load functions ----------------------------------------------------------
 pop_den_check <- function(df.in, df.out, pop_raster, crs = crs_espg) {
@@ -111,7 +113,8 @@ sf_use_s2(FALSE)
 # empty geometries won't work
 
 # rename df
-fires <- binded_conus_disaster_fires_2000_2019
+#fires <- binded_conus_disaster_fires_2000_2019
+fires <- hawaii
 
 # subset to non-empty geometries
 fires <- fires %>%
