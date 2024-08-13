@@ -13,7 +13,7 @@ pacman::p_load(raster, tmap, SpatialKDE, dplyr, here, sf, readr, beepr,
 
 
 # Setup the parallel processing plan
-plan(multisession(workers = 64))
+#plan(multisession(workers = 64))
 
 # Load functions ----------------------------------------------------------
 pop_den_work <- function(.data, pop_raster, crs) {
@@ -60,7 +60,12 @@ pop_den_work <- function(.data, pop_raster, crs) {
     fire_name_utm_10 <- fire_name_utm_10[1,1] 
     
     density <- utm_10_sf %>% 
-      kde(band_width = band_width, kernel = "quartic", grid = grid_utm_10, weights = utm_10_sf[[1]])
+      kde(
+        band_width = band_width, 
+        kernel = "quartic", 
+        grid = grid_utm_10, 
+        weights = utm_10_sf[[1]]
+    )
     
     density_criteria <- as.data.frame(density) %>% 
       filter(kde_value == max(kde_value)) %>% 
@@ -116,7 +121,7 @@ hawaii <- hawaii %>% mutate(st_area_acre_final = area_sq_m*.000247105)
 alaska <- alaska %>% mutate(st_area_acre_final = area_sq_m*.000247105)
 
 # crs UTM mapping by place
-utm_crs <- read.csv("~/casey-cohort/utm_popden.csv")
+utm_crs <- read.csv("data/utm_popden.csv")
 
 # Turn off spherical geometry ---------------------------------------------
 
@@ -148,8 +153,9 @@ lst <- lapply(list(conus, hawaii, alaska), function(fires) {
     
     states_vector <- unlist(utm_crs_10_temp$states_list[1])
     
-    fires_utm_10 <- fires %>%
-      filter(disaster_list_states %in% states_vector)
+    fires_utm_10 <- fires #%>%
+    #  filter(disaster_list_states %in% states_vector)
+    # debug 
     
     if(nrow(fires_utm_10)>0){
     
@@ -158,8 +164,8 @@ lst <- lapply(list(conus, hawaii, alaska), function(fires) {
       # print(unique(fires_utm_10$disaster_list_states))
       
       # rasters
-      us_raster_00 <- raster(file.path("~/casey-cohort", utm_crs_i$pop_raster_00))
-      us_raster_10 <- raster(file.path("~/casey-cohort", utm_crs_i$pop_raster_10))
+      us_raster_00 <- raster(file.path("data/casey-cohort", utm_crs_i$pop_raster_00), crs = st_crs(4326)$wkt)
+      us_raster_10 <- raster(file.path("data/casey-cohort", utm_crs_i$pop_raster_10), crs = st_crs(4326)$wkt)
       
       
       # Create the buffer for wildfire boundaries -------------------------------
