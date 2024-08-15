@@ -6,3 +6,4 @@ data/raw/pop_data
 data/proccessed/partial/
 .future
 .vscode
+renv/
