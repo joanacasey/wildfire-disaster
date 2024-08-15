@@ -1,0 +1,13 @@
+utm,states,crs,pop_raster_00,pop_raster_10
+10,"WA, OR, CA",26910,us_pop2000myc.tif,us_pop2010myc.tif
+11,"ID, NV",26911,us_pop2000myc.tif,us_pop2010myc.tif
+12,"AZ, UT, MT",26912,us_pop2000myc.tif,us_pop2010myc.tif
+13,"CO, NM, WY",26913,us_pop2000myc.tif,us_pop2010myc.tif
+14,"TX, OK, KS, NE, SD, ND",26914,us_pop2000myc.tif,us_pop2010myc.tif
+15,"LA, AR, MO, IA, MN",26915,us_pop2000myc.tif,us_pop2010myc.tif
+16,"MS, AL, TN, KY, IL, IN, WI, MI",26916,us_pop2000myc.tif,us_pop2010myc.tif
+17,"FL, GA, SC, NC, VA, WV, OH",26917,us_pop2000myc.tif,us_pop2010myc.tif
+18,"MD, DE, NJ, PA, NY, CT, MA, VT",26918,us_pop2000myc.tif,us_pop2010myc.tif
+19,"RI, NH, ME",26919,us_pop2000myc.tif,us_pop2010myc.tif
+4,HI,2784,US-HI_ppp_2000_1km.tif,US-HI_ppp_2010_1km.tif
+6,AK,3338,US-AK_ppp_2000_1km.tif,US-AK_ppp_2010_1km.tif
